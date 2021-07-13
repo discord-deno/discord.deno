@@ -9,7 +9,8 @@ export const guildMemberUpdate: GatewayEventHandler = async (
   d: GuildMemberUpdatePayload
 ) => {
   const guild: Guild | undefined = await gateway.client.guilds.get(d.guild_id)
-  // Weird case, shouldn't happen
+
+  // Hack around <GuildManager>.get that value can be null
   if (guild === undefined) return
 
   await gateway.client.users.set(d.user.id, d.user)
@@ -26,9 +27,7 @@ export const guildMemberUpdate: GatewayEventHandler = async (
   await guild.members.set(d.user.id, newMemberPayload)
   const newMember = await guild.members.get(d.user.id)
 
-  if (member !== undefined)
-    gateway.client.emit('guildMemberUpdate', member, newMember as Member)
-  else {
-    gateway.client.emit('guildMemberUpdateUncached', newMember)
-  }
+  if (member !== undefined) return gateway.client.emit('guildMemberUpdate', member, newMember as Member)
+
+  gateway.client.emit('guildMemberUpdateUncached', newMember)
 }

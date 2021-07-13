@@ -73,23 +73,24 @@ export class ChannelsManager extends BaseManager<ChannelPayload, Channel> {
   /** Fetches a Channel by ID, cache it, resolve it */
   async fetch<T = Channel>(id: string): Promise<T> {
     return await new Promise((resolve, reject) => {
-      this.client.rest
-        .get(CHANNEL(id))
-        .then(async (data) => {
-          this.set(id, data as ChannelPayload)
-          let guild
-          if (data.guild_id !== undefined) {
-            guild = await this.client.guilds.get(data.guild_id)
-          }
-          resolve(
-            getChannelByType(
-              this.client,
-              data as ChannelPayload,
-              guild
-            ) as unknown as T
-          )
-        })
-        .catch((e) => reject(e))
+      this.client.rest.get(CHANNEL(id))
+        .then(
+          async (data) => {
+            this.set(id, data as ChannelPayload)
+            let guild
+            if (data.guild_id !== undefined) {
+              guild = await this.client.guilds.get(data.guild_id)
+            }
+            resolve(
+              getChannelByType(
+                this.client,
+                data as ChannelPayload,
+                guild
+              ) as unknown as T
+            )
+          },
+          reject
+        )
     })
   }
 
@@ -110,6 +111,26 @@ export class ChannelsManager extends BaseManager<ChannelPayload, Channel> {
     if (option instanceof Embed) {
       option = {
         embed: option
+      }
+    }
+
+    const messageComponenets = option?.components !== undefined ? transformComponent(option.components) : undefined
+
+    let reference: any = option?.reply
+
+    if (reference !== undefined) {
+      if (typeof reference === 'string') {
+
+        reference = { message_id: option?.reply }
+
+      } else {
+        if (reference instanceof Message) {
+          reference = {
+            message_id: reference?.id,
+            channel_id: reference?.channel.id,
+            guild_id: reference?.guild?.id
+          }
+        }
       }
     }
 
@@ -151,11 +172,11 @@ export class ChannelsManager extends BaseManager<ChannelPayload, Channel> {
     const resp = await this.client.rest.api.channels[channelID].messages.post(
       payload
     )
-    const chan =
-      typeof channel === 'string'
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          (await this.get<TextChannel>(channel))!
-        : channel
+
+    const chan = typeof channel === 'string'
+      ? (await this.get<TextChannel>(channel))!
+      : channel
+
     const res = new Message(this.client, resp, chan, this.client.user as any)
     await res.mentions.fromPayload(resp)
     return res
@@ -200,11 +221,10 @@ export class ChannelsManager extends BaseManager<ChannelPayload, Channel> {
           : undefined
     })
 
-    const chan =
-      typeof channel === 'string'
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          (await this.get<TextChannel>(channel))!
-        : channel
+    const chan = typeof channel === 'string'
+      ? (await this.get<TextChannel>(channel))!
+      : channel
+
     const res = new Message(this.client, newMsg, chan, this.client.user)
     await res.mentions.fromPayload(newMsg)
     return res

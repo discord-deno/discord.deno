@@ -103,7 +103,7 @@ export class Command implements CommandOptions {
   declare readonly _decoratedSubCommands?: Command[]
 
   /** Method called when the command errors */
-  onError(ctx: CommandContext, error: Error): any {}
+  onError(ctx: CommandContext, error: Error): any { }
 
   /** Method executed before executing actual command. Returns bool value - whether to continue or not (optional) */
   beforeExecute(ctx: CommandContext): boolean | Promise<boolean> {
@@ -111,18 +111,14 @@ export class Command implements CommandOptions {
   }
 
   /** Actual command code, which is executed when all checks have passed. */
-  execute(ctx: CommandContext): any {}
+  execute(ctx: CommandContext): any { }
   /** Method executed after executing command, passes on CommandContext and the value returned by execute too. (optional) */
-  afterExecute(ctx: CommandContext, executeResult: any): any {}
+  afterExecute(ctx: CommandContext, executeResult: any): any { }
 
   toString(): string {
-    return `Command: ${this.name}${
-      this.extension !== undefined && this.extension.name !== ''
-        ? ` [${this.extension.name}]`
-        : this.category !== undefined
-        ? ` [${this.category}]`
-        : ''
-    }`
+    const category = this.category !== undefined ? ` [${this.category}]` : ''
+    return `Command: ${this.name}${this.extension !== undefined && this.extension.name !== ''
+      ? ` [${this.extension.name}]` : category}`
   }
 
   constructor() {
@@ -198,8 +194,7 @@ export class CommandBuilder extends Command {
 
     this.aliases = [
       ...new Set(
-        ...this.aliases,
-        ...(typeof alias === 'string' ? [alias] : alias)
+        ...this.aliases, ...(typeof alias === 'string' ? [alias] : alias)
       )
     ]
 
@@ -222,8 +217,7 @@ export class CommandBuilder extends Command {
 
     this.aliases = [
       ...new Set(
-        ...this.usage,
-        ...(typeof usage === 'string' ? [usage] : usage)
+        ...this.usage, ...(typeof usage === 'string' ? [usage] : usage)
       )
     ]
 
@@ -241,8 +235,7 @@ export class CommandBuilder extends Command {
 
     this.examples = [
       ...new Set(
-        ...this.examples,
-        ...(typeof examples === 'string' ? [examples] : examples)
+        ...this.examples, ...(typeof examples === 'string' ? [examples] : examples)
       )
     ]
 
@@ -359,8 +352,8 @@ export class CommandsLoader {
     const mod = await import(
       // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
       'file:///' +
-        join(Deno.cwd(), filePath) +
-        (seq === undefined ? '' : `#${seq}`)
+      join(Deno.cwd(), filePath) +
+      (seq === undefined ? '' : `#${seq}`)
     )
     if (this.#importSeq[filePath] === undefined) this.#importSeq[filePath] = 0
     else this.#importSeq[filePath]++
@@ -371,8 +364,7 @@ export class CommandsLoader {
 
     let cmd: Command
     try {
-      if (Cmd instanceof Command) cmd = Cmd
-      else cmd = new Cmd()
+      cmd = Cmd instanceof Command ? Cmd : new Cmd()
       if (!(cmd instanceof Command)) throw new Error('failed')
     } catch (e) {
       throw new Error(`Failed to load Command from ${filePath}`)
@@ -409,9 +401,7 @@ export class CommandsLoader {
     })) {
       if (entry.isFile !== true) continue
       const cmd = await this.load(
-        entry.path,
-        options?.exportName,
-        options?.onlyRead
+        entry.path, options?.exportName, options?.onlyRead
       )
       commands.push(cmd)
     }
@@ -444,23 +434,22 @@ export class CommandsManager {
         if (
           this.client.caseSensitive === true
             ? subPrefix !== cmd.extension?.subPrefix
-            : subPrefix.toLowerCase() !==
-              cmd.extension?.subPrefix?.toLowerCase()
+            : subPrefix.toLowerCase() !== cmd.extension?.subPrefix?.toLowerCase()
         ) {
           return false
         }
       } else if (
-        subPrefix === undefined &&
-        cmd.extension?.subPrefix !== undefined
+        subPrefix === undefined && cmd.extension?.subPrefix !== undefined
       ) {
         return false
       }
 
-      const name =
-        this.client.caseSensitive === true ? cmd.name : cmd.name.toLowerCase()
+      const name = this.client.caseSensitive === true ? cmd.name : cmd.name.toLowerCase()
       if (name === search) {
         return true
-      } else if (cmd.aliases !== undefined) {
+      }
+
+      if (cmd.aliases !== undefined) {
         let aliases: string[]
         if (typeof cmd.aliases === 'string') aliases = [cmd.aliases]
         else aliases = cmd.aliases
@@ -476,8 +465,7 @@ export class CommandsManager {
 
   /** Find a Command by name/alias */
   find(search: string, subPrefix?: string): Command | undefined {
-    const filtered = this.filter(search, subPrefix)
-    return filtered.first()
+    return this.filter(search, subPrefix).first()
   }
 
   /** Fetch a Command including disable checks, sub commands and subPrefix implementation */
@@ -492,8 +480,7 @@ export class CommandsManager {
         this.client.caseSensitive === true
           ? cmd.extension.subPrefix !== parsed.name
           : cmd.extension.subPrefix.toLowerCase() !== parsed.name.toLowerCase()
-      )
-        return
+      ) return
 
       const shifted = parsed.args.shift()
       if (shifted !== undefined)
@@ -536,24 +523,20 @@ export class CommandsManager {
 
     if (typeof search === 'string')
       return this.find(search, subPrefix) !== undefined
-    else {
-      exists =
-        this.find(
-          search.name,
-          subPrefix === undefined ? search.extension?.subPrefix : subPrefix
-        ) !== undefined
 
-      if (search.aliases !== undefined) {
-        const aliases: string[] =
-          typeof search.aliases === 'string' ? [search.aliases] : search.aliases
-        exists =
-          aliases
-            .map((alias) => this.find(alias) !== undefined)
-            .find((e) => e) ?? false
-      }
 
-      return exists
+    exists =
+      this.find(
+        search.name,
+        subPrefix === undefined ? search.extension?.subPrefix : subPrefix
+      ) !== undefined
+
+    if (search.aliases !== undefined) {
+      const aliases: string[] = [...search.aliases].flat()
+      exists = !(aliases.find((alias) => this.find(alias)) !== undefined)
     }
+
+    return exists
   }
 
   /** Add a Command */
@@ -579,12 +562,11 @@ export class CommandsManager {
     }
     if (cmd.name === '') throw new Error('Command has no name')
     this.list.set(
-      `${cmd.name}-${
-        this.list.filter((e) =>
-          this.client.caseSensitive === true
-            ? e.name === cmd.name
-            : e.name.toLowerCase() === cmd.name.toLowerCase()
-        ).size
+      `${cmd.name}-${this.list.filter((e) =>
+        this.client.caseSensitive === true
+          ? e.name === cmd.name
+          : e.name.toLowerCase() === cmd.name.toLowerCase()
+      ).size
       }`,
       cmd
     )
@@ -602,9 +584,7 @@ export class CommandsManager {
   isDisabled(name: string | Command): boolean {
     const cmd = typeof name === 'string' ? this.find(name) : name
     if (cmd === undefined) return false
-    const exists = this.exists(name)
-    if (!exists) return false
-    return this.disabled.has(cmd.name)
+    return this.exists(name) ? false : this.disabled.has(cmd.name)
   }
 
   /** Disable a Command */
@@ -619,7 +599,7 @@ export class CommandsManager {
   /** Get all commands of a Category */
   category(category: string): Collection<string, Command> {
     return this.list.filter(
-      (cmd) => cmd.category !== undefined && cmd.category === category
+      (cmd) => cmd?.category === category
     )
   }
 }
@@ -656,17 +636,17 @@ export class CategoriesManager {
 
   /** Add a Category to the Manager */
   add(category: CommandCategory): CategoriesManager {
-    if (this.has(category))
-      throw new Error(`Category ${category.name} already exists`)
+    if (this.has(category)) throw new Error(`Category ${category.name} already exists`)
+
     this.list.set(category.name, category)
     return this
   }
 
   /** Remove a Category from the Manager */
   remove(category: string | CommandCategory): boolean {
-    if (!this.has(category)) return false
-    this.list.delete(typeof category === 'string' ? category : category.name)
-    return true
+    return this.has(category)
+      ? false
+      : this.list.delete(typeof category === 'string' ? category : category.name)
   }
 }
 
@@ -691,9 +671,5 @@ export const parseCommand = (
   if (name === undefined) return
   const argString = content.slice(name.length).trim()
 
-  return {
-    name,
-    args,
-    argString
-  }
+  return { name, args, argString }
 }

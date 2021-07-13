@@ -61,8 +61,8 @@ export class SlashCommand {
       (typeof guild === 'string'
         ? guild
         : typeof guild === 'object'
-        ? guild.id
-        : undefined)
+          ? guild.id
+          : undefined)
     if (guildID === undefined)
       throw new Error('Expected Slash Command to be a Guild one')
     return await this.slash.permissions.set(this.id, data, guildID)
@@ -76,8 +76,8 @@ export class SlashCommand {
       (typeof guild === 'string'
         ? guild
         : typeof guild === 'object'
-        ? guild.id
-        : undefined)
+          ? guild.id
+          : undefined)
     if (guildID === undefined)
       throw new Error('Expected Slash Command to be a Guild one')
     return await this.slash.permissions.get(this.id, guildID)
@@ -121,8 +121,8 @@ function createSlashOption(
       data.choices === undefined
         ? undefined
         : data.choices.map((e) =>
-            typeof e === 'string' ? { name: e, value: e } : e
-          )
+          typeof e === 'string' ? { name: e, value: e } : e
+        )
   }
 }
 
@@ -170,15 +170,15 @@ export type SlashOptionCallable = (o: typeof SlashOption) => SlashCommandOption
 export type SlashBuilderOptionsData =
   | Array<SlashCommandOption | SlashOptionCallable>
   | {
-      [name: string]:
-        | {
-            description: string
-            type: SlashCommandOptionType
-            options?: SlashCommandOption[]
-            choices?: SlashCommandChoice[]
-          }
-        | SlashOptionCallable
+    [name: string]:
+    | {
+      description: string
+      type: SlashCommandOptionType
+      options?: SlashCommandOption[]
+      choices?: SlashCommandChoice[]
     }
+    | SlashOptionCallable
+  }
 
 function buildOptionsArray(
   options: SlashBuilderOptionsData
@@ -186,10 +186,10 @@ function buildOptionsArray(
   return Array.isArray(options)
     ? options.map((op) => (typeof op === 'function' ? op(SlashOption) : op))
     : Object.entries(options).map((entry) =>
-        typeof entry[1] === 'function'
-          ? entry[1](SlashOption)
-          : Object.assign(entry[1], { name: entry[0] })
-      )
+      typeof entry[1] === 'function'
+        ? entry[1](SlashOption)
+        : Object.assign(entry[1], { name: entry[0] })
+    )
 }
 
 /** Slash Command Builder */
@@ -273,7 +273,7 @@ export function transformSlashCommandPermission(
   if (typeof data.type === 'string') {
     data.type =
       SlashCommandPermissionType[
-        data.type.toUpperCase() as keyof typeof SlashCommandPermissionType
+      data.type.toUpperCase() as keyof typeof SlashCommandPermissionType
       ]
   }
   return data as unknown as SlashCommandPermissionPayload
@@ -449,8 +449,8 @@ export class SlashCommandsManager {
       guild === undefined
         ? this.rest.api.applications[this.slash.getID()].commands
         : this.rest.api.applications[this.slash.getID()].guilds[
-            typeof guild === 'string' ? guild : guild.id
-          ].commands
+          typeof guild === 'string' ? guild : guild.id
+        ].commands
 
     const payload = await route.post(transformSlashCommand(data))
 
@@ -458,8 +458,8 @@ export class SlashCommandsManager {
       typeof guild === 'object'
         ? guild
         : guild === undefined
-        ? undefined
-        : await this.slash.client?.guilds.get(guild)
+          ? undefined
+          : await this.slash.client?.guilds.get(guild)
 
     const cmd = new SlashCommand(this, payload, _guild)
     cmd.guildID =
@@ -478,8 +478,8 @@ export class SlashCommandsManager {
       guild === undefined
         ? this.rest.api.applications[this.slash.getID()].commands[id]
         : this.rest.api.applications[this.slash.getID()].guilds[
-            typeof guild === 'string' ? guild : guild.id
-          ].commands[id]
+          typeof guild === 'string' ? guild : guild.id
+        ].commands[id]
 
     const d = await route.patch(transformSlashCommand(data))
     const _guild =
@@ -499,8 +499,8 @@ export class SlashCommandsManager {
       guild === undefined
         ? this.rest.api.applications[this.slash.getID()].commands[id]
         : this.rest.api.applications[this.slash.getID()].guilds[
-            typeof guild === 'string' ? guild : guild.id
-          ].commands[id]
+          typeof guild === 'string' ? guild : guild.id
+        ].commands[id]
 
     await route.delete()
     return this
@@ -512,8 +512,8 @@ export class SlashCommandsManager {
       guild === undefined
         ? this.rest.api.applications[this.slash.getID()].commands[id]
         : this.rest.api.applications[this.slash.getID()].guilds[
-            typeof guild === 'string' ? guild : guild.id
-          ].commands[id]
+          typeof guild === 'string' ? guild : guild.id
+        ].commands[id]
 
     const data = await route.get()
 
@@ -521,8 +521,8 @@ export class SlashCommandsManager {
       typeof guild === 'object'
         ? guild
         : guild === undefined
-        ? undefined
-        : await this.slash.client?.guilds.get(guild)
+          ? undefined
+          : await this.slash.client?.guilds.get(guild)
 
     return new SlashCommand(this, data, _guild)
   }
@@ -536,8 +536,8 @@ export class SlashCommandsManager {
       guild === undefined
         ? this.rest.api.applications[this.slash.getID()].commands
         : this.rest.api.applications[this.slash.getID()].guilds[
-            typeof guild === 'string' ? guild : guild.id
-          ].commands
+          typeof guild === 'string' ? guild : guild.id
+        ].commands
 
     const d = await route.put(cmds.map(transformSlashCommand))
     const col = new Collection<string, SlashCommand>()
@@ -546,8 +546,8 @@ export class SlashCommandsManager {
       typeof guild === 'object'
         ? guild
         : typeof guild === 'string'
-        ? await this.slash.client?.guilds.get(guild)
-        : undefined
+          ? await this.slash.client?.guilds.get(guild)
+          : undefined
 
     for (const raw of d) {
       const cmd = new SlashCommand(this, raw, _guild)

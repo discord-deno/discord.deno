@@ -8,6 +8,7 @@ export const guildBanAdd: GatewayEventHandler = async (
 ) => {
   await gateway.client.users.set(d.user.id, d.user)
   const guild: Guild | undefined = await gateway.client.guilds.get(d.guild_id)
+
   const user = (await gateway.client.users.get(d.user.id))!
 
   if (guild !== undefined) {

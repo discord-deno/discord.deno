@@ -9,6 +9,7 @@ export const guildEmojiUpdate: GatewayEventHandler = async (
   d: GuildEmojiUpdatePayload
 ) => {
   const guild: Guild | undefined = await gateway.client.guilds.get(d.guild_id)
+
   if (guild !== undefined) {
     const emojis = await guild.emojis.collection()
     const deleted: Emoji[] = []
@@ -28,36 +29,43 @@ export const guildEmojiUpdate: GatewayEventHandler = async (
       } else _updated.push(raw)
     }
 
-    for (const emoji of emojis.values()) {
-      const emojiID = (emoji.id !== null ? emoji.id : emoji.name) as string
-      const find = _updated.find((e) => {
-        const eID = e.id !== null ? e.id : e.name
-        return emojiID === eID
-      })
-      if (find === undefined) {
-        await guild.emojis.delete(emojiID)
-        deleted.push(emoji)
-      } else {
-        const foundID = (find.id !== null ? find.id : find.name) as string
-        const before = (await guild.emojis.get(foundID)) as Emoji
-        await guild.emojis.set(foundID, find)
-        const after = (await guild.emojis.get(foundID)) as Emoji
-        updated.push({ before, after })
-      }
+  for (const raw of d.emojis) {
+    const emojiID = raw.id ?? raw.name as string
+    if (emojis.has(emojiID) === true) _updated.push(raw)
+    else {
+      await guild.emojis.set(emojiID, raw)
+      const emoji = (await guild.emojis.get(emojiID)) as Emoji
+      added.push(emoji)
     }
+  }
 
-    gateway.client.emit('guildEmojisUpdate', guild)
+  for (const emoji of emojis.values()) {
+    const emojiID = (emoji.id ?? emoji.name) as string
+    const find = _updated.find((e) => emojiID === (e.id ?? e.name))
 
-    for (const emoji of deleted) {
-      gateway.client.emit('guildEmojiDelete', emoji)
+    if (find === undefined) {
+      await guild.emojis.delete(emojiID)
+      deleted.push(emoji)
+    } else {
+      const foundID = (find.id !== null ? find.id : find.name) as string
+      const before = (await guild.emojis.get(foundID)) as Emoji
+      await guild.emojis.set(foundID, find)
+      const after = (await guild.emojis.get(foundID)) as Emoji
+      updated.push({ before, after })
     }
+  }
 
-    for (const emoji of added) {
-      gateway.client.emit('guildEmojiAdd', emoji)
-    }
+  gateway.client.emit('guildEmojisUpdate', guild)
 
-    for (const emoji of updated) {
-      gateway.client.emit('guildEmojiUpdate', emoji.before, emoji.after)
-    }
+  for (const emoji of deleted) {
+    gateway.client.emit('guildEmojiDelete', emoji)
+  }
+
+  for (const emoji of added) {
+    gateway.client.emit('guildEmojiAdd', emoji)
+  }
+
+  for (const emoji of updated) {
+    gateway.client.emit('guildEmojiUpdate', emoji.before, emoji.after)
   }
 }
